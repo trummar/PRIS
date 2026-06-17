@@ -1,0 +1,18 @@
+{
+  "blogg": [],
+  "kalender": [],
+  "filer": [
+    {
+      "id": 1,
+      "tittel": "Testing",
+      "beskrivelse": "Innsendt av Viggo Vass (VAss).\n\nAbstract: Jadda dette funker",
+      "fil_navn": "Foredrag_om_programmering.pdf",
+      "r2_url": "http://konferanse.duckdns.org/uploads/e791ea35104ec876_Foredrag_om_programmering.pdf",
+      "kategori_id": 1,
+      "emne": "Konferanse-import",
+      "opprettet_dato": "2026-06-17 22:14:39",
+      "kategori_navn": "Presentasjoner"
+    }
+  ],
+  "sist_oppdatert": "2026-06-18 00:15:29"
+}
