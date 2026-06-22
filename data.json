@@ -1,5 +1,16 @@
 {
-  "blogg": [],
+  "blogg": [
+    {
+      "id": 1,
+      "tittel": "Vi har hatt sommerens webinar",
+      "slug": "vi-har-hatt-sommerens-webinar-7908db",
+      "innhold": "Her skjedde det mye rart, ",
+      "forfatter": "Viggo",
+      "publisert_dato": "2026-06-22 23:06:09",
+      "kategori": "begreper og didaktikk",
+      "vedlegg_url": "https://86431abd6a2391c678908da80ac16b27.r2.cloudflarestorage.com/pris-filer/85a84cd4e52ea13a_UDIRS_nkkelbegreper.pptx"
+    }
+  ],
   "kalender": [
     {
       "id": 1,
@@ -36,5 +47,5 @@
       "kategori_navn": "Presentasjoner"
     }
   ],
-  "sist_oppdatert": "2026-06-23 01:05:23"
+  "sist_oppdatert": "2026-06-23 01:06:09"
 }
