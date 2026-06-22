@@ -57,19 +57,26 @@
     </footer>
 
     <script>
-        // Global variabel for å holde på dataene som hentes
+        // ⚠️ KONFIGURASJON: Lim inn din offentlige Cloudflare R2 URL her (Uten skråstrek til slutt)
+        const R2_PUBLIC_BASE_URL = "https://pub-382028ff13c945b1b74846eda97f5740.r2.dev";
+
         let nettverkData = { blogg: [], kalender: [], filer: [] };
+
+        // Hjelpefunksjon for å gjøre om en intern R2-api-url til din fungerende offentlige URL
+        definerer_nedlastingslenke = (internUrl) => {
+            if (!internUrl) return "";
+            const filnavnMedHash = internUrl.split('/').pop();
+            return `${R2_PUBLIC_BASE_URL}/${filnavnMedHash}`;
+        };
 
         // 1. HENT DATA FRA data.json
         async function lastData() {
             try {
-                // Henter data.json fra samme mappe på GitHub Pages
                 const respons = await fetch('data.json');
                 if (!respons.ok) throw new Error('Fant ikke data.json');
                 
                 nettverkData = await respons.json();
                 
-                // Tegn opp innholdet i de ulike seksjonene
                 tegnBlogg();
                 tegnKalender();
                 tegnFiler();
@@ -83,12 +90,9 @@
 
         // 2. FANE-NAVIGASJON
         function byttFane(faneNavn) {
-            // Skjul alle seksjoner
             document.querySelectorAll('.fane-seksjon').forEach(el => el.classList.add('hidden'));
-            // Vis valgt seksjon
             document.getElementById(`fane-${faneNavn}`).classList.remove('hidden');
             
-            // Oppdater knappestilinger
             document.querySelectorAll('.fane-btn').forEach(btn => {
                 btn.classList.remove('bg-blue-700', 'text-white');
                 btn.classList.add('text-gray-300', 'hover:text-white');
@@ -98,66 +102,97 @@
             aktivKnapp.classList.add('bg-blue-700', 'text-white');
         }
 
-        // 3. RENDRE BLOGGPOSTER
+        // 3. RENDRE BLOGGPOSTER (Med sjekk for vedlegg)
         function tegnBlogg() {
             const container = document.getElementById('blogg-container');
-            if (nettverkData.blogg.length === 0) {
+            if (!nettverkData.blogg || nettverkData.blogg.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 italic col-span-full">Ingen aktuelle saker publisert ennå.</p>';
                 return;
             }
             
-            container.innerHTML = nettverkData.blogg.map(post => `
-                <article class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 flex flex-col justify-between">
-                    <div class="p-6">
-                        <span class="inline-block text-xs font-semibold tracking-wider uppercase text-blue-600 bg-blue-50 px-2 py-1 rounded mb-4">${post.kategori || 'Generelt'}</span>
-                        <h3 class="text-xl font-bold mb-2 text-gray-900">${post.tittel}</h3>
-                        <p class="text-gray-600 text-sm mb-4 line-clamp-4">${post.innhold}</p>
-                    </div>
-                    <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 text-xs text-gray-500 flex justify-between">
-                        <span>Av: ${post.forfatter}</span>
-                        <span>${post.publisert_dato.split(' ')[0]}</span>
-                    </div>
-                </article>
-            `).join('');
+            container.innerHTML = nettverkData.blogg.map(post => {
+                // Sjekk om det eksisterer et vedlegg tilknyttet posten
+                const harVedlegg = post.vedlegg_url && post.vedlegg_url.trim() !== "";
+                const fungerendeVedleggsUrl = harVedlegg ? definerer_nedlastingslenke(post.vedlegg_url) : "";
+
+                return `
+                    <article class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 flex flex-col justify-between">
+                        <div class="p-6">
+                            <span class="inline-block text-xs font-semibold tracking-wider uppercase text-blue-600 bg-blue-50 px-2 py-1 rounded mb-4">${post.kategori || 'Generelt'}</span>
+                            <h3 class="text-xl font-bold mb-2 text-gray-900">${post.tittel}</h3>
+                            <p class="text-gray-600 text-sm mb-4 whitespace-pre-line">${post.innhold}</p>
+                            
+                            ${harVedlegg ? `
+                                <div class="mt-4 pt-4 border-t border-dashed border-gray-200">
+                                    <a href="${fungerendeVedleggsUrl}" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition">
+                                        📁 Last ned tilhørende ressurs
+                                    </a>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 text-xs text-gray-500 flex justify-between">
+                            <span>Av: ${post.forfatter || 'Nettverket'}</span>
+                            <span>${post.publisert_dato ? post.publisert_dato.split(' ')[0] : ''}</span>
+                        </div>
+                    </article>
+                `;
+            }).join('');
         }
 
-        // 4. RENDRE KALENDER
+        // 4. RENDRE KALENDER (Med sjekk for vedlegg)
         function tegnKalender() {
             const container = document.getElementById('kalender-container');
-            if (nettverkData.kalender.length === 0) {
+            if (!nettverkData.kalender || nettverkData.kalender.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 italic">Ingen planlagte webinarer eller hendelser for øyeblikket.</p>';
                 return;
             }
             
             container.innerHTML = nettverkData.kalender.map(mote => {
                 const badgeFarge = mote.type === 'webinar' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800';
+                const harVedlegg = mote.vedlegg_url && mote.vedlegg_url.trim() !== "";
+                const fungerendeVedleggsUrl = harVedlegg ? definerer_nedlastingslenke(mote.vedlegg_url) : "";
+
                 return `
                     <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
+                        <div class="flex-grow">
                             <div class="flex items-center gap-2 mb-2">
-                                <span class="px-2 py-0.5 text-xs font-medium rounded-full ${badgeFarge}">${mote.type.toUpperCase()}</span>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded-full ${badgeFarge}">${mote.type ? mote.type.toUpperCase() : 'MØTE'}</span>
                                 <span class="text-sm text-amber-600 font-semibold">${mote.start_tid}</span>
                             </div>
                             <h3 class="text-lg font-bold text-gray-900">${mote.tittel}</h3>
-                            <p class="text-gray-600 text-sm mt-1">${mote.beskrivelse || ''}</p>
+                            <p class="text-gray-600 text-sm mt-1 whitespace-pre-line">${mote.beskrivelse || ''}</p>
+                            
+                            ${harVedlegg ? `
+                                <div class="mt-3">
+                                    <a href="${fungerendeVedleggsUrl}" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:underline">
+                                        📎 Last ned møteforberedelser / lysark
+                                    </a>
+                                </div>
+                            ` : ''}
                         </div>
-                        ${mote.sted_lenke ? `<a href="${mote.sted_lenke}" target="_blank" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white text-center px-4 py-2 rounded-lg font-medium text-sm shadow transition">Gå til lenke / Teams</a>` : ''}
+                        
+                        ${mote.sted_lenke ? `
+                            <div class="w-full md:w-auto shrink-0">
+                                <a href="${mote.sted_lenke}" target="_blank" class="block w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white text-center px-4 py-2 rounded-lg font-medium text-sm shadow transition">
+                                    Gå til lenke / Teams
+                                </a>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             }).join('');
         }
 
-        // 5. RENDRE FILER (Og håndtere søk)
+        // 5. RENDRE FILARKIV
         function tegnFiler(filtrerteFiler = null) {
             const container = document.getElementById('filer-container');
             const fileneSomSkalVises = filtrerteFiler || nettverkData.filer;
             
-            if (fileneSomSkalVises.length === 0) {
+            if (!fileneSomSkalVises || fileneSomSkalVises.length === 0) {
                 container.innerHTML = '<p class="p-6 text-gray-500 italic text-center">Ingen filer matcher søket eller arkivet er tomt.</p>';
                 return;
             }
             
-            // Bygger en ryddig tabellstruktur
             container.innerHTML = `
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -170,25 +205,28 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-sm">
-                            ${fileneSomSkalVises.map(fil => `
-                                <tr class="hover:bg-gray-50 transition">
-                                    <td class="p-4">
-                                        <div class="font-bold text-gray-900">${fil.tittel}</div>
-                                        <div class="text-xs text-gray-500 mt-0.5 max-w-md truncate" title="${fil.beskrivelse || ''}">${fil.beskrivelse || 'Ingen beskrivelse.'}</div>
-                                    </td>
-                                    <td class="p-4">
-                                        <span class="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">${fil.kategori_navn || 'Ukatatlogisert'}</span>
-                                    </td>
-                                    <td class="p-4">
-                                        <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">${fil.emne || 'Felles'}</span>
-                                    </td>
-                                    <td class="p-4 text-right">
-                                        <a href="https://pub-382028ff13c945b1b74846eda97f5740.r2.dev/${fil.r2_url.split('/').pop()}" download="${fil.fil_navn}" target="_blank" class="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800">
-                                            Last ned (.${fil.fil_navn.split('.').pop()})
-                                        </a>
-                                    </td>
-                                </tr>
-                            `).join('')}
+                            ${fileneSomSkalVises.map(fil => {
+                                const ekteNedlastingsUrl = definerer_nedlastingslenke(fil.r2_url);
+                                return `
+                                    <tr class="hover:bg-gray-50 transition">
+                                        <td class="p-4">
+                                            <div class="font-bold text-gray-900">${fil.tittel}</div>
+                                            <div class="text-xs text-gray-500 mt-0.5 max-w-md truncate" title="${fil.beskrivelse || ''}">${fil.beskrivelse || 'Ingen beskrivelse.'}</div>
+                                        </td>
+                                        <td class="p-4">
+                                            <span class="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">${fil.kategori_navn || 'Ukatalogisert'}</span>
+                                        </td>
+                                        <td class="p-4">
+                                            <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">${fil.emne || 'Felles'}</span>
+                                        </td>
+                                        <td class="p-4 text-right">
+                                            <a href="${ekteNedlastingsUrl}" download="${fil.fil_navn}" target="_blank" class="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800">
+                                                Last ned (.${fil.fil_navn.split('.').pop()})
+                                            </a>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -214,7 +252,6 @@
             document.getElementById('filer-container').innerHTML = feilHtml;
         }
 
-        // Starter automatisk innlasting når siden åpnes
         lastData();
     </script>
 </body>
