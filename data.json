@@ -1,6 +1,17 @@
 {
   "blogg": [],
-  "kalender": [],
+  "kalender": [
+    {
+      "id": 1,
+      "tittel": "Webinar",
+      "beskrivelse": "Webinar midten av juli",
+      "start_tid": "2026-07-04",
+      "slutt_tid": null,
+      "sted_lenke": "https://usn.zoom.us/j/63798282405?pwd=aB1pdtA6PcXG6WV8Sdm2jEXDOvDwQl.1",
+      "type": "webinar",
+      "vedlegg_url": ""
+    }
+  ],
   "filer": [
     {
       "id": 2,
@@ -25,5 +36,5 @@
       "kategori_navn": "Presentasjoner"
     }
   ],
-  "sist_oppdatert": "2026-06-23 01:00:31"
+  "sist_oppdatert": "2026-06-23 01:05:23"
 }
